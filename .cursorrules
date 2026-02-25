@@ -1,0 +1,55 @@
+You are an expert software engineer building a Next.js application with Supabase.
+
+# Critical Error Handling & Logging Rules
+
+ALL code that interacts with:
+1.  **Supabase Database** (queries, mutations)
+2.  **External APIs** (Salesforce, Stripe, etc.)
+3.  **Server Actions** (Next.js server actions)
+4.  **Client-side Data Fetching** (useEffect, event handlers)
+
+MUST follow these strict error handling guidelines:
+
+## 1. Mandatory Try/Catch
+Wrap all async operations in `try...catch` blocks.
+NEVER leave a catch block empty or just `console.error`.
+
+## 2. Centralized Logging
+Use the `logError` utility from `@/utils/logger` to log the error to the Supabase `error_logs` table.
+
+```typescript
+import { logError } from '@/utils/logger'
+
+try {
+  // ... operation
+} catch (error) {
+  // 1. Log to console for dev
+  console.error('Operation failed:', error)
+  
+  // 2. Log to database for tracking
+  await logError(error, 'function-name', { ...contextData })
+  
+  // 3. Handle user feedback (toast/alert) or rethrow if necessary
+  // ...
+}
+```
+
+## 3. User Feedback
+-   For **Server Actions**: Return a standardized error object or redirect to an error page with a message if critical.
+-   For **Client Components**: Use `sonner` toast notifications to inform the user.
+    ```typescript
+    import { toast } from 'sonner'
+    
+    // in catch block:
+    toast.error('Failed to save data. Our team has been notified.')
+    ```
+-   For **Critical Failures** (page load): Use `error.tsx` boundaries.
+
+## 4. No Silent Failures
+Errors must either be:
+-   Recovered from (with a log)
+-   Reported to the user (toast/UI)
+-   Bubbled up to a boundary that handles it
+
+## 5. Context is King
+When logging, always include relevant IDs (userId, recordId, etc.) in the context object passed to `logError`. This is vital for debugging.
